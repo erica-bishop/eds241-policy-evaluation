@@ -1,0 +1,61 @@
+---
+title: "EDS241: Assignment 1"
+author: "Erica Bishop"
+date: '`r format(Sys.time(), "%m/%d/%Y")`'
+output: 
+  pdf_document:
+    toc: false
+    number_sections: yes
+header-includes:
+  - \setlength{\parindent}{1em}
+  - \usepackage{float}
+--- 
+
+```{r}
+#load libraries 
+library(tidyverse)
+library(estimatr)
+library(stargazer)
+library(janitor)
+library(here)
+
+```
+```{r}
+#load data
+
+CES_dat <- readxl::read_xlsx(here("eds241_data/CES4.xlsx")) |>  #read-in file
+  clean_names() #standardize variable names
+
+CES_dat <- CES_dat |> 
+  select(census_tract, total_population, low_birth_weight, #select variables of interest for this assignment
+  pm2_5, poverty, linguistic_isolation)
+
+
+```
+
+(a) What is the average concentration of PM2.5 across all census tracts in California?
+
+```{r}
+avg_pm2_5 <- 
+
+```
+
+
+(b) Make a histogram depicting the distribution of percent low birth weight and PM2.5.
+
+```{r}
+
+
+
+```
+
+(c) Estimate an OLS regression of LowBirthWeight on PM25. Report the estimated slope coefficient and its heteroskedasticity-robust standard error. Interpret the estimated slope coefficient. Is the effect of PM25 on LowBirthWeight statistically significant at the 5% level?
+
+
+(d) Suppose a new air quality policy is expected to reduce PM2.5 concentration by 2 micrograms per cubic meters. Predict the new average value of LowBirthWeight and derive its 95% confidence interval. Interpret the 95% confidence interval. [The script “LinearPrediction.R” available on Gauchospace will be helpful for this.]
+
+
+(e) Add the variable Poverty as an explanatory variable to the regression in (d). Interpret the estimated coefficient on Poverty. What happens to the estimated coefficient on PM25, compared to the regression in (d). Explain.
+
+
+(f) Create an indicator variable equal to 1 if the census tract is above the median LinguisticIsolation (6.9), and equal to 0 otherwise. Add this indicator variable to regression model used in (e) and interpret the estimated coefficient on the indicator variable.
