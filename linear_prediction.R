@@ -1,7 +1,9 @@
 library(estimatr)
 library(stargazer)
 
-setwd("C:\\Users\\olivi\\Dropbox\\Econ Desktop\\Teaching\\EDS 241\\2023\\Data")
+# setwd("C:\\Users\\olivi\\Dropbox\\Econ Desktop\\Teaching\\EDS 241\\2023\\Data")
+# using an R project as working directory
+
 
 # IMPORT CSV DATA
 HPRICE2 <- read.csv("HPRICE2.csv")
