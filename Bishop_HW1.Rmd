@@ -3,15 +3,14 @@ title: "EDS241: Assignment 1"
 author: "Erica Bishop"
 date: '`r format(Sys.time(), "%m/%d/%Y")`'
 output: 
-  pdf_document:
-    toc: false
-    number_sections: yes
+  html_document:
 header-includes:
   - \setlength{\parindent}{1em}
   - \usepackage{float}
---- 
+---
 
 ```{r}
+
 #load libraries 
 library(tidyverse)
 library(estimatr)
@@ -23,7 +22,7 @@ library(patchwork)
 
 ```
 
-```{r}
+```{r warning=FALSE}
 #load data
 
 CES_dat <- readxl::read_xlsx(here("eds241_data/CES4.xlsx")) |>  #read-in file
@@ -39,6 +38,7 @@ CES_dat <- CES_dat |>
   mutate(low_birth_weight = as.numeric(low_birth_weight),
          linguistic_isolation = as.numeric(linguistic_isolation))
 
+
 ```
 
 (a) What is the average concentration of PM2.5 across all census tracts in California?
@@ -49,7 +49,6 @@ avg_pm2_5 <- mean(CES_dat$pm2_5, na.rm = TRUE)
 print(paste0("The average PM 2.5 concentration across all census tracts in California is ", round(avg_pm2_5, 3), "."))
 
 ```
-
 
 (b) Make a histogram depicting the distribution of percent low birth weight and PM2.5.
 
@@ -65,7 +64,7 @@ hist_plot <- ggplot(data = CES_dat,
                      fill = "PM 2.5"),
                  col = "black",
                  alpha = 0.5) +
-  scale_fill_manual(values = c("lightblue", "lightpink"),
+  scale_fill_manual(values = c("blue", "yellow"),
                     name = "Variable") +
   labs(title = "Distrubition of low birth weight %s and PM 2.5 in California census tracts") +
   theme_minimal() +
@@ -81,17 +80,61 @@ hist_plot
 
 ```{r}
 
+model1 <- lm(formula = low_birth_weight ~ pm2_5,
+             data = CES_dat) #build model
 
+#specify heteroskedasticic standard error
+se_model1 <- starprep(model1,
+                      stat = c("std.error"),
+                      se_type = "HC1",
+                      alpha = 0.05) 
+
+stargazer(model1, se = se_model1, type="text")
+
+slope_coef <- model1$coefficients[2]
+
+#print answers
+print(paste("This slope coefficient from this model shows that there will be about an", round(slope_coef, 3), "increase in low birth weight for a one unit increase in pm 2.5. This is statistically significant at the 5% level and the 1% level."))
+
+print("The heteroskedastic robust standard error for the slope coefficient is The heteroskedastic robust standard error for the slope coefficient is 0.008401 (this is very close to the homoskedastic standard error of 0.00833).")
 
 ```
 
-
-
-(d) Suppose a new air quality policy is expected to reduce PM2.5 concentration by 2 micrograms per cubic meters. Predict the new average value of LowBirthWeight and derive its 95% confidence interval. Interpret the 95% confidence interval. [The script “LinearPrediction.R” available on Gauchospace will be helpful for this.]
+(d) Suppose a new air quality policy is expected to reduce PM2.5 concentration by 2 micrograms per cubic meters. Predict the new average value of LowBirthWeight and derive its 95% confidence interval. Interpret the 95% confidence interval. [The script "LinearPrediction.R" available on Gauchospace will be helpful for this.]
 
 ```{r}
+#create new df with lower PM2.5
+CES_lowpm <- CES_dat |> 
+  mutate(pm2_5 = pm2_5 - 2)
+
+#create new robust model
+model2 <- lm_robust(low_birth_weight ~ pm2_5,
+                    data = CES_dat, #use original df
+                    se_type = "HC1",
+                    alpha = 0.05)
+
+#predict new birth weight
+pred_lbw <- predict(
+  model2,
+  newdata = CES_lowpm,
+  se.fit = TRUE,
+  interval = 'confidence'
+)
+
+#calcuate fit average (center of confidence interval)
+fit_avg_lbw <- mean(pred_lbw$fit)
+
+orignal_lbw <- mean(CES_dat$low_birth_weight, na.rm = TRUE)
+
+#calculate averages for upper and lower bounds of confidience interval
+low_lbw <- mean(pred_lbw$fit[,2]) 
+high_lbw <- mean(pred_lbw$fit[,3])
 
 
+#print answers
+print(paste0("The new average low birth weight will likely be about ", round(fit_avg_lbw, 3), "% of babies across census tracts in California if PM 2.5 decereases by 2 micrograms per cubic meter."))
+print(paste0("This is lower than the initial low birth weight of ", round(orignal_lbw, 3), "% of babies across census tracts in California."))
+print(paste0("The interval from ", round(low_lbw, 3), "to ", round(high_lbw, 3), " will contain the true mean value of babies born with low birth rate across California Census tracts 95% of the time in this new scenario."))
 
 ```
 
@@ -99,16 +142,45 @@ hist_plot
 
 ```{r}
 
+model3 <- lm_robust(
+  formula = low_birth_weight ~ pm2_5 + poverty,
+  data = CES_dat,
+  se_type = "HC1",
+  alpha = 0.05
+)
 
+summary(model3)
+
+pov_coef <- model3$coefficients[3]
+
+print(paste("The poverty coefficient means that low birth rates will increase by an additional", round(pov_coef, 3), "for every one unit increase in poverty."))
+print("The pm 2.5 coefficient in this new model, 0.059, is lower than the previous coefficient of 0.118. This is becuase poverty affects the birth rate so when it's accounted for in the model, the effect of pm 2.5 is smaller. The previous model incorrectly attributed all of the change in low birth weigth to pm 2.5.")
 
 ```
-
 
 (f) Create an indicator variable equal to 1 if the census tract is above the median LinguisticIsolation (6.9), and equal to 0 otherwise. Add this indicator variable to regression model used in (e) and interpret the estimated coefficient on the indicator variable.
 
 ```{r}
 
+#create new df with indicator variable
+CES_ling <- CES_dat |> 
+  add_column(ling_iso_threshold = case_when(
+    CES_dat$linguistic_isolation > 6.9 ~ 1,
+    TRUE ~ 0
+  ))
 
+#create new model
+model4 <- lm_robust(
+  formula = low_birth_weight ~ pm2_5 + poverty + ling_iso_threshold,
+  data = CES_ling,
+  se_type = "HC1",
+  alpha = 0.05
+)
+
+summary(model4)
+
+ling_coef <- model4$coefficients[4]
+
+print(paste("The coefficient on the linguistic isolation indicator variable is", round(ling_coef, 3), "which means above median linguistic isolation increases low birth weights by", round(ling_coef, 3)))
 
 ```
-
