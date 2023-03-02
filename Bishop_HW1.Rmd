@@ -3,11 +3,19 @@ title: "EDS241: Assignment 1"
 author: "Erica Bishop"
 date: '`r format(Sys.time(), "%m/%d/%Y")`'
 output: 
-  html_document:
+  pdf_document:
 header-includes:
   - \setlength{\parindent}{1em}
   - \usepackage{float}
 ---
+```{r}
+# set default chunk options
+knitr::opts_chunk$set(fig.width = 4, fig.height = 3, 
+                      echo = TRUE, message = FALSE, 
+                      warning = FALSE, tidy.opts = list(width.cutoff = 60), 
+                      tidy = TRUE)
+```
+
 
 ```{r}
 
@@ -46,9 +54,13 @@ CES_dat <- CES_dat |>
 ```{r}
 avg_pm2_5 <- mean(CES_dat$pm2_5, na.rm = TRUE)
 
+```
+
+```{r results = 'asis', echo = F}
 print(paste0("The average PM 2.5 concentration across all census tracts in California is ", round(avg_pm2_5, 3), "."))
 
 ```
+
 
 (b) Make a histogram depicting the distribution of percent low birth weight and PM2.5.
 
@@ -79,7 +91,6 @@ hist_plot
 (c) Estimate an OLS regression of LowBirthWeight on PM25. Report the estimated slope coefficient and its heteroskedasticity-robust standard error. Interpret the estimated slope coefficient. Is the effect of PM25 on LowBirthWeight statistically significant at the 5% level?
 
 ```{r}
-
 model1 <- lm(formula = low_birth_weight ~ pm2_5,
              data = CES_dat) #build model
 
@@ -93,6 +104,10 @@ stargazer(model1, se = se_model1, type="text")
 
 slope_coef <- model1$coefficients[2]
 
+```
+
+
+```{r results = 'asis', echo = F}
 #print answers
 print(paste("This slope coefficient from this model shows that there will be about an", round(slope_coef, 3), "increase in low birth weight for a one unit increase in pm 2.5. This is statistically significant at the 5% level and the 1% level."))
 
@@ -130,6 +145,10 @@ orignal_lbw <- mean(CES_dat$low_birth_weight, na.rm = TRUE)
 low_lbw <- mean(pred_lbw$fit[,2]) 
 high_lbw <- mean(pred_lbw$fit[,3])
 
+```
+
+
+```{r results = 'asis', echo = F}
 
 #print answers
 print(paste0("The new average low birth weight will likely be about ", round(fit_avg_lbw, 3), "% of babies across census tracts in California if PM 2.5 decereases by 2 micrograms per cubic meter."))
@@ -153,7 +172,10 @@ summary(model3)
 
 pov_coef <- model3$coefficients[3]
 
-print(paste("The poverty coefficient means that low birth rates will increase by an additional", round(pov_coef, 3), "for every one unit increase in poverty."))
+```
+```{r results = 'asis', echo = F}
+
+print(paste("The poverty coefficient means that low birth weigth rates will increase by an additional", round(pov_coef, 3), "for every one unit increase in poverty."))
 print("The pm 2.5 coefficient in this new model, 0.059, is lower than the previous coefficient of 0.118. This is becuase poverty affects the birth rate so when it's accounted for in the model, the effect of pm 2.5 is smaller. The previous model incorrectly attributed all of the change in low birth weigth to pm 2.5.")
 
 ```
@@ -181,6 +203,10 @@ summary(model4)
 
 ling_coef <- model4$coefficients[4]
 
-print(paste("The coefficient on the linguistic isolation indicator variable is", round(ling_coef, 3), "which means above median linguistic isolation increases low birth weights by", round(ling_coef, 3)))
+```
+```{r results = 'asis', echo = F}
+
+print(paste("The coefficient on the linguistic isolation indicator variable is", round(ling_coef, 3), "which means that for every unit increase in linguistic isolation above the median, the percent of low birth weights increases by", round(ling_coef, 3)))
 
 ```
+
